@@ -1,0 +1,87 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  CSS variables follow shadcn/ui convention (HSL without the hsl() wrapper).
+  Adjust hue/saturation/lightness here to retheme the whole product.
+  Light mode defaults — Slate base, Indigo primary.
+*/
+@layer base {
+  :root {
+    --background:              0 0% 100%;
+    --foreground:              222 47% 11%;
+
+    --card:                    0 0% 100%;
+    --card-foreground:         222 47% 11%;
+
+    --primary:                 243 75% 59%;
+    --primary-foreground:      0 0% 100%;
+
+    --secondary:               215 25% 95%;
+    --secondary-foreground:    222 47% 11%;
+
+    --muted:                   215 25% 95%;
+    --muted-foreground:        215 16% 47%;
+
+    --accent:                  243 75% 95%;
+    --accent-foreground:       243 75% 35%;
+
+    --destructive:             0 84% 60%;
+    --destructive-foreground:  0 0% 100%;
+
+    --border:                  215 25% 90%;
+    --input:                   215 25% 90%;
+    --ring:                    243 75% 59%;
+
+    --radius:                  0.625rem;
+
+    --font-sans: 'Geist', 'Inter', system-ui, sans-serif;
+    --font-mono: 'Geist Mono', 'Fira Code', monospace;
+  }
+
+  .dark {
+    --background:              222 47% 8%;
+    --foreground:              213 31% 91%;
+
+    --card:                    222 47% 11%;
+    --card-foreground:         213 31% 91%;
+
+    --primary:                 243 75% 65%;
+    --primary-foreground:      222 47% 8%;
+
+    --secondary:               222 47% 15%;
+    --secondary-foreground:    213 31% 91%;
+
+    --muted:                   222 47% 15%;
+    --muted-foreground:        215 16% 60%;
+
+    --accent:                  243 75% 20%;
+    --accent-foreground:       243 75% 80%;
+
+    --destructive:             0 63% 55%;
+    --destructive-foreground:  0 0% 100%;
+
+    --border:                  222 47% 18%;
+    --input:                   222 47% 18%;
+    --ring:                    243 75% 65%;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: theme('fontSize.body[0]');
+    line-height: theme('fontSize.body[1].lineHeight');
+  }
+
+  /* Typography helpers — use these classes, never arbitrary sizes */
+  .text-display    { @apply text-display tracking-tight; }
+  .text-heading    { @apply text-heading; }
+  .text-subheading { @apply text-subheading; }
+  .text-body       { @apply text-body; }
+  .text-small      { @apply text-small; }
+  .text-label      { @apply text-label uppercase tracking-widest; }
+}

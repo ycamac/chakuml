@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Code Standards
+
+- All documentation, comments, docstrings, and commit messages in English.
+- Variable names: short but meaningful (uid, req, cfg, resp).
+- Every function must have a one-line English docstring.
+- DRY: before adding code, check for existing helpers in ml/, backend/app/services/, or shared/.
+- Max 30 lines per router handler; extract to service if larger.
+- No TODO comments committed — finish it or open an issue.

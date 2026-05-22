@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+# Hackathon Shipping Rules
+
+- MVP scope only. No premature optimisation.
+- Small, frequent commits.
+- Ship order: database schema → /api/db → ml/ + /api/ml → frontend → ngrok → Vercel.
+- If a feature takes more than 2 h, simplify it.
+- No custom CSS — use Tailwind utility classes and shadcn/ui components.
+- No inline styles.

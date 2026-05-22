@@ -1,0 +1,10 @@
+---
+alwaysApply: true
+---
+
+# Architecture Boundaries
+
+- frontend/ → Auth via Supabase only; all ML and data calls via lib/api.ts to API_URL.
+- ml/ → no Supabase imports, no Next.js imports.
+- backend/app/routers/ml.py → no model weights, prompts, or httpx calls (those belong in ml/).
+- No duplicated helpers — extract to shared/ or the owning package.

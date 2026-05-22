@@ -1,0 +1,11 @@
+---
+globs: backend/**
+---
+
+# FastAPI Conventions
+
+- App factory in app/main.py; include routers with prefix + tags.
+- APIRouter per domain (ml, db); no business logic in router files.
+- Pydantic v2 models in app/schemas/; always use response_model=.
+- Dependencies in app/dependencies/ (get_current_user).
+- Async routes for all I/O-bound operations.

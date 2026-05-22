@@ -1,0 +1,28 @@
+---
+globs: frontend/**
+---
+
+# Frontend Design System
+
+## Typography
+Use only the scale classes from globals.css:
+  text-display | text-heading | text-subheading | text-body | text-small | text-label
+Never use arbitrary sizes (text-[15px], text-xl mixed with text-2xl, etc.).
+
+## Colors
+Use only semantic tokens:
+  text-foreground | text-muted-foreground | text-primary
+  bg-background | bg-card | bg-muted
+  border-border
+Never use raw palette classes (text-slate-700, bg-indigo-500).
+To change the brand color, update --primary in globals.css.
+
+## Components
+1. shadcn/ui first (Button, Card, Input, Dialog, etc.)
+2. Layout wrappers from src/components/layout/ (Header, PageWrapper)
+3. Feature components in src/components/features/<feature-name>/
+Never re-implement a component that shadcn/ui already provides.
+
+## Spacing
+Use the default Tailwind spacing scale (p-4, gap-6, etc.).
+Max page width: max-w-screen-xl (set in PageWrapper).

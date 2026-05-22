@@ -1,0 +1,10 @@
+---
+globs: ml/**
+---
+
+# ML Package Rules
+
+- All ML inference code lives here — never in backend/app/routers/.
+- No model weights committed to git — use paths from ml/config.py.
+- Single llama.cpp client in ml/clients/llama.py — never duplicated.
+- Services in ml/services/ — one concern per file.
