@@ -110,11 +110,11 @@ validate:
     "start": "next start"
   },
   "dependencies": {
-    "next": "14.2.0",
-    "react": "^18",
-    "react-dom": "^18",
+    "next": "^15",
+    "react": "^19",
+    "react-dom": "^19",
     "@supabase/supabase-js": "^2",
-    "@supabase/ssr": "^0.1.0",
+    "@supabase/ssr": "^0.5.0",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "lucide-react": "^0.395.0",
@@ -122,7 +122,8 @@ validate:
   },
   "devDependencies": {
     "typescript": "^5",
-    "@types/react": "^18",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
     "@types/node": "^20",
     "tailwindcss": "^3",
     "autoprefixer": "^10",
@@ -131,9 +132,14 @@ validate:
 }
 ```
 
-> After `npm install`, initialise shadcn/ui: `npx shadcn-ui@latest init`
+> After `npm install`, initialise shadcn/ui: `npx shadcn@latest init`
 > Answer: TypeScript yes, style Default, base color Slate, CSS variables yes, `src/` yes, App Router yes.
 > Components land in `frontend/src/components/ui/` — never edit them manually.
+>
+> **Next.js 15 notes:**
+> - `fetch` is **not cached by default** — add `{ cache: 'force-cache' }` or `revalidate` explicitly where needed.
+> - `cookies()`, `headers()`, and route `params` are now **async** — always `await` them in Server Components.
+> - Use `next dev --turbo` for faster local builds (Turbopack stable).
 
 ### 4.2 TypeScript config
 
