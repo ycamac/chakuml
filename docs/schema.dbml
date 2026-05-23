@@ -1,0 +1,361 @@
+// ============================================================
+// Chaku — Pet Health Tracker
+// Database schema in DBML format for dbdiagram.io
+//
+// How to use:
+//   1. Go to https://dbdiagram.io/d
+//   2. Paste this entire file into the editor
+//   3. The visual ERD renders instantly on the right panel
+//   4. Export as PNG / PDF from File → Export
+// ============================================================
+
+// ─── IDENTITY & ACCESS ───────────────────────────────────────
+
+Table profiles {
+  id                 uuid        [pk, note: "Matches auth.users(id)"]
+  full_name          text
+  avatar_url         text
+  country            text        [not null, default: "CA", note: "ISO country code"]
+  locale             text        [not null, default: "en", note: "'en' | 'es' | …"]
+  timezone           text        [not null, default: "America/Toronto"]
+  role               text        [not null, default: "user", note: "'user' | 'admin'"]
+  notification_email text        [note: "Overrides auth email for alerts"]
+  created_at         timestamptz [not null]
+  updated_at         timestamptz [not null]
+
+  note: "Extends auth.users. One row per authenticated user."
+}
+
+Table pet_members {
+  id         uuid        [pk]
+  pet_id     uuid        [not null, ref: > pets.id]
+  user_id    uuid        [not null, ref: > profiles.id]
+  role       text        [not null, default: "owner", note: "'owner' | 'viewer'"]
+  created_at timestamptz [not null]
+
+  indexes {
+    (pet_id, user_id) [unique]
+    user_id
+    pet_id
+  }
+
+  note: "Controls user ↔ pet access. Basis for all RLS policies."
+}
+
+Table menu_items {
+  id            uuid        [pk]
+  key           text        [not null, unique, note: "Stable code identifier, e.g. 'pets'"]
+  label         text        [not null, note: "Default English label"]
+  path          text        [not null, note: "Next.js route, e.g. '/pets'"]
+  icon          text        [note: "lucide-react icon name"]
+  parent_id     uuid        [ref: > menu_items.id, note: "Self-ref for nested menus"]
+  required_role text        [note: "NULL = all users | 'admin' = admin only"]
+  sort_order    smallint    [not null, default: 0]
+  is_active     boolean     [not null, default: true]
+  created_at    timestamptz [not null]
+  updated_at    timestamptz [not null]
+
+  note: "Dynamic navigation tree. Add a new section with one INSERT."
+}
+
+// ─── CORE ────────────────────────────────────────────────────
+
+Table pets {
+  id           uuid        [pk]
+  name         text        [not null]
+  species      text        [not null, note: "'dog'|'cat'|'bird'|'rabbit'|'reptile'|'other'"]
+  breed        text
+  birth_year   smallint
+  birth_month  smallint    [note: "1–12"]
+  sex          text        [note: "'male'|'female'|'unknown'"]
+  weight_kg    numeric
+  height_cm    numeric
+  length_cm    numeric
+  microchip_id text
+  color        text
+  avatar_url   text
+  is_deceased  boolean     [not null, default: false]
+  deceased_at  date
+  created_at   timestamptz [not null]
+  updated_at   timestamptz [not null]
+  deleted_at   timestamptz [note: "Soft delete"]
+
+  note: "Core pet profile. Soft-deleted via deleted_at."
+}
+
+// ─── VET VISITS & CLINICAL ───────────────────────────────────
+
+Table vet_visits {
+  id                  uuid        [pk]
+  pet_id              uuid        [not null, ref: > pets.id]
+  visit_date          date        [not null]
+  vet_name            text
+  clinic_name         text
+  clinic_address      text
+  reason              text        [not null]
+  chief_complaint     text
+  weight_at_visit_kg  numeric     [note: "Weight snapshot at visit time"]
+  temperature_celsius numeric
+  follow_up_date      date        [note: "Drives follow-up reminder"]
+  notes               text
+  created_by          uuid        [ref: > profiles.id]
+  created_at          timestamptz [not null]
+  updated_at          timestamptz [not null]
+  deleted_at          timestamptz
+
+  indexes { pet_id }
+}
+
+Table diagnoses {
+  id             uuid        [pk]
+  pet_id         uuid        [not null, ref: > pets.id]
+  vet_visit_id   uuid        [ref: > vet_visits.id, note: "Optional visit link"]
+  diagnosis_name text        [not null]
+  icd_code       text        [note: "ICD-10 / SNOMED (optional)"]
+  severity       text        [note: "'mild'|'moderate'|'severe'"]
+  status         text        [not null, default: "active", note: "'active'|'resolved'|'chronic'|'monitoring'"]
+  diagnosed_date date
+  resolved_date  date
+  notes          text
+  created_by     uuid        [ref: > profiles.id]
+  created_at     timestamptz [not null]
+  updated_at     timestamptz [not null]
+
+  indexes {
+    pet_id
+    vet_visit_id
+  }
+}
+
+Table treatments {
+  id              uuid        [pk]
+  pet_id          uuid        [not null, ref: > pets.id]
+  diagnosis_id    uuid        [ref: > diagnoses.id, note: "Optional diagnosis link"]
+  vet_visit_id    uuid        [ref: > vet_visits.id, note: "Optional visit link"]
+  treatment_name  text        [not null]
+  treatment_type  text        [note: "'medication'|'therapy'|'surgery'|'supplement'|'other'"]
+  dosage          text
+  frequency       text
+  route           text        [note: "'oral'|'topical'|'injection'|'inhaled'|'other'"]
+  start_date      date
+  end_date        date
+  is_ongoing      boolean     [not null, default: false]
+  prescribing_vet text
+  notes           text
+  created_by      uuid        [ref: > profiles.id]
+  created_at      timestamptz [not null]
+  updated_at      timestamptz [not null]
+
+  indexes {
+    pet_id
+    diagnosis_id
+  }
+}
+
+Table allergies {
+  id              uuid        [pk]
+  pet_id          uuid        [not null, ref: > pets.id]
+  allergen        text        [not null]
+  allergen_type   text        [note: "'food'|'environmental'|'medication'|'contact'|'other'"]
+  severity        text        [note: "'mild'|'moderate'|'severe'|'life_threatening'"]
+  reaction        text
+  discovered_date date
+  confirmed       boolean     [not null, default: false, note: "Confirmed by a vet"]
+  notes           text
+  created_by      uuid        [ref: > profiles.id]
+  created_at      timestamptz [not null]
+  updated_at      timestamptz [not null]
+
+  indexes { pet_id }
+}
+
+// ─── VACCINATIONS ────────────────────────────────────────────
+
+Table vaccinations {
+  id              uuid        [pk]
+  pet_id          uuid        [not null, ref: > pets.id]
+  vet_visit_id    uuid        [ref: > vet_visits.id, note: "Deferred FK — optional"]
+  vaccine_name    text        [not null]
+  manufacturer    text
+  lot_number      text
+  date_given      date        [not null]
+  next_due_date   date        [note: "Drives reminder creation"]
+  administered_by text
+  notes           text
+  created_by      uuid        [ref: > profiles.id]
+  created_at      timestamptz [not null]
+  updated_at      timestamptz [not null]
+  deleted_at      timestamptz
+
+  indexes {
+    pet_id
+    next_due_date [note: "Partial: WHERE deleted_at IS NULL"]
+  }
+}
+
+// ─── LAB TESTS ───────────────────────────────────────────────
+
+Table lab_tests {
+  id           uuid        [pk]
+  pet_id       uuid        [not null, ref: > pets.id]
+  vet_visit_id uuid        [ref: > vet_visits.id, note: "Deferred FK — optional"]
+  test_date    date        [not null]
+  lab_name     text
+  test_type    text        [note: "'blood'|'urine'|'feces'|'imaging'|'other'"]
+  notes        text
+  created_by   uuid        [ref: > profiles.id]
+  created_at   timestamptz [not null]
+  updated_at   timestamptz [not null]
+  deleted_at   timestamptz
+
+  indexes { pet_id }
+}
+
+Table lab_results {
+  id              uuid        [pk]
+  lab_test_id     uuid        [not null, ref: > lab_tests.id]
+  panel_name      text        [note: "e.g. 'Complete Blood Count'"]
+  parameter_name  text        [not null, note: "e.g. 'WBC', 'Glucose'"]
+  value           text        [not null, note: "Text — handles qualitative and numeric"]
+  unit            text
+  reference_min   numeric
+  reference_max   numeric
+  reference_text  text        [note: "For qualitative refs, e.g. 'Negative'"]
+  flag            text        [note: "'L'|'H'|'LL'|'HH'|'normal'|'abnormal'"]
+  created_at      timestamptz [not null]
+
+  indexes { lab_test_id }
+}
+
+Table lab_interpretations {
+  id           uuid        [pk]
+  lab_test_id  uuid        [not null, unique, ref: - lab_tests.id, note: "1:1 with lab_tests"]
+  summary      text        [not null, note: "LLM plain-language explanation"]
+  disclaimer   text        [not null, note: "Medical disclaimer — always displayed"]
+  model_used   text
+  generated_at timestamptz [not null]
+  created_at   timestamptz [not null]
+}
+
+// ─── DIET ────────────────────────────────────────────────────
+
+Table diet_entries {
+  id               uuid        [pk]
+  pet_id           uuid        [not null, ref: > pets.id]
+  food_name        text        [not null]
+  brand            text
+  food_type        text        [note: "'dry'|'wet'|'raw'|'homemade'|'supplement'|'treat'|'other'"]
+  amount_grams     numeric
+  frequency        text        [note: "e.g. '2x daily'"]
+  calories_per_day numeric
+  start_date       date
+  end_date         date        [note: "NULL = currently active"]
+  notes            text
+  created_by       uuid        [ref: > profiles.id]
+  created_at       timestamptz [not null]
+  updated_at       timestamptz [not null]
+
+  indexes { pet_id }
+}
+
+Table diet_analyses {
+  id              uuid        [pk]
+  pet_id          uuid        [not null, ref: > pets.id]
+  summary         text        [not null]
+  recommendations text
+  model_used      text
+  generated_at    timestamptz [not null]
+  created_at      timestamptz [not null]
+
+  indexes {
+    (pet_id, generated_at) [note: "DESC — latest per pet"]
+  }
+}
+
+// ─── INSURANCE ───────────────────────────────────────────────
+
+Table insurance_policies {
+  id                 uuid        [pk]
+  pet_id             uuid        [not null, ref: > pets.id]
+  provider_name      text        [not null]
+  policy_number      text
+  plan_name          text
+  coverage_type      text        [note: "'accident'|'accident_illness'|'comprehensive'|'wellness'"]
+  start_date         date
+  end_date           date        [note: "Drives renewal reminder"]
+  premium_amount     numeric
+  premium_currency   text        [not null, default: "CAD"]
+  premium_frequency  text        [note: "'monthly'|'annual'"]
+  deductible_amount  numeric
+  status             text        [not null, default: "active", note: "'active'|'expired'|'cancelled'|'pending'"]
+  notes              text
+  created_by         uuid        [ref: > profiles.id]
+  created_at         timestamptz [not null]
+  updated_at         timestamptz [not null]
+
+  indexes {
+    (pet_id, status)
+    end_date [note: "Partial: WHERE status = 'active'"]
+  }
+}
+
+// ─── ATTACHMENTS ─────────────────────────────────────────────
+
+Table attachments {
+  id              uuid        [pk]
+  entity_type     text        [not null, note: "'pet'|'vet_visit'|'lab_test'|'vaccination'|'treatment'|'diagnosis'|'insurance_policy'"]
+  entity_id       uuid        [not null, note: "ID of the parent row"]
+  pet_id          uuid        [not null, ref: > pets.id, note: "Denormalized for RLS — no join needed"]
+  file_name       text        [not null]
+  file_type       text        [note: "'image'|'document'|'voice_note'|'other'"]
+  mime_type       text
+  storage_path    text        [not null, note: "Supabase Storage object path"]
+  file_size_bytes bigint
+  description     text
+  uploaded_by     uuid        [ref: > profiles.id]
+  created_at      timestamptz [not null]
+
+  indexes {
+    (entity_type, entity_id)
+    pet_id
+  }
+}
+
+// ─── NOTIFICATIONS & REMINDERS ───────────────────────────────
+
+Table reminders {
+  id           uuid        [pk]
+  user_id      uuid        [not null, ref: > profiles.id]
+  pet_id       uuid        [not null, ref: > pets.id]
+  entity_type  text        [note: "'vaccination'|'insurance_policy'|'vet_visit'|'treatment'"]
+  entity_id    uuid
+  title        text        [not null]
+  message      text
+  remind_at    timestamptz [not null]
+  channels     text[]      [not null, default: `array['in_app']`, note: "['email','in_app']"]
+  is_sent      boolean     [not null, default: false]
+  sent_at      timestamptz
+  is_dismissed boolean     [not null, default: false]
+  created_at   timestamptz [not null]
+
+  indexes {
+    (user_id, remind_at) [note: "Partial: WHERE is_sent=false AND is_dismissed=false"]
+  }
+}
+
+Table notifications {
+  id          uuid        [pk]
+  user_id     uuid        [not null, ref: > profiles.id]
+  title       text        [not null]
+  message     text
+  type        text        [note: "'reminder'|'insight'|'system'"]
+  entity_type text
+  entity_id   uuid
+  is_read     boolean     [not null, default: false]
+  read_at     timestamptz
+  created_at  timestamptz [not null]
+
+  indexes {
+    (user_id, is_read)
+  }
+}
