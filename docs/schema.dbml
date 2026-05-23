@@ -18,7 +18,7 @@ Table profiles {
   country            text        [not null, default: "CA", note: "ISO country code"]
   locale             text        [not null, default: "en", note: "'en' | 'es' | …"]
   timezone           text        [not null, default: "America/Toronto"]
-  role               text        [not null, default: "owner", note: "'owner' | 'admin'"]
+  role               text        [not null, default: "user", note: "'user' | 'admin'"]
   notification_email text        [note: "Overrides auth email for alerts"]
   created_at         timestamptz [not null]
   updated_at         timestamptz [not null]
